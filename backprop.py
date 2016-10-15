@@ -31,7 +31,7 @@ class Neuron:
 
     def __init__(self, n=64, lrate=0.5, alpha=0, epsilon=0.1):
         self.weight = []
-        for i in range(n+1):
+        for i in range(n):
             self.weight.append(random.uniform(-1,1))
         self.learnrate = lrate
 
@@ -65,9 +65,13 @@ class Neuron:
 
     #backprop_error = backpropagated values from next layer (d-y) for output layer
     def learn(self, backprop_error, x):
-        delta_weight = []
+        delta_weight = [0]*len(self.weight)
         f_prime = (self.y * (1 - self.y))
         self.de = f_prime * backprop_error
+
+        # print ("weight length:" + str(len(self.weight)))
+        # print ("Input length:" + str(len(x)))
+
         for i in range(len(self.weight)):
             delta_weight[i] = self.learnrate * x[i] * f_prime * backprop_error
             self.prev_weight[i] = self.weight[i]
@@ -76,6 +80,7 @@ class Neuron:
                                 self.alpha * self.prev_delta_weight[i]
 
             self.prev_delta_weight[i] = delta_weight[i]
+
 
 
     def print_weight(self):
@@ -127,7 +132,8 @@ class NeuralNetwork:
 
 
     def input_train_data(self, data, d_output):
-        print(len(self.layer[0]))
+        # print(len(self.layer[0]))
+        # put data into input layer (except x0)
         for i in range(1, len(self.layer[0])):
             self.layer[0][i].input_data(data[i-1])
 
@@ -139,6 +145,7 @@ class NeuralNetwork:
                 self.layer[i][j].calc_output(x)
 
         # check for error and adjust weight for output layer
+        print("Starting to train output layer..")
         i_output = len(self.layer)-1
         for i in range(len(self.layer[i_output])):
             d = 0
@@ -153,10 +160,13 @@ class NeuralNetwork:
                 x = self.get_layer_output(i_output-1)
                 self.layer[i_output][i].learn(de, x)
 
+        print("Starting to train hidden layer..")
         for i in reversed(range(1, len(self.layer)-1)):
-            for j in range(len(self.layer[i])):
+            print("Training hidden layer " + str(i))
+            for j in range(1, len(self.layer[i])):
+                print("Training node no. " + str(j))
                 de = self.get_layer_error(i+1, j)
-                x = self.get_layer_output(j-1)
+                x = self.get_layer_output(i-1)
                 self.layer[i][j].learn(de, x)
 
 
@@ -213,9 +223,11 @@ if __name__ == '__main__':
     nn.add_layer(1, 40, 0.5, 0, 0.1)
     nn.add_layer(2, 10, 0.5, 0, 0.1)
     dat, output = read_data("./training.txt")
-    print(len(dat[1]))
+    # print(len(dat[1]))
     for i in range(len(dat)):
         nn.input_train_data(dat[i], output[i])
+
+    # make function in NeuralNetwork to get data
 
 
 
