@@ -29,16 +29,19 @@ import math
 
 class Neuron:
 
-    def __init__(self, n=65, lrate=0.5, alpha=0, epsilon=0.1):
+    def __init__(self, n=64, lrate=0.5, alpha=0, epsilon=0.1):
         self.weight = []
         for i in range(n+1):
             self.weight.append(random.uniform(-1,1))
         self.learnrate = lrate
-        self.alpha = alpha              #for momentum
-        self.last_delta_weight = 0      #for momentum
-        self.epsilon = epsilon          #sigmoid/output
-        self.y = 0                      #output
 
+        self.alpha = alpha                              #for momentum
+        self.prev_delta_weight = [0]*len(self.weight)   #for momentum
+
+        self.epsilon = epsilon                          #sigmoid/output
+        self.y = 0                                      #output
+        self.prev_weight = [0]*len(self.weight)
+        self.de = 0
 
     def sigmoid(self, a):
         return 1/(1 + math.exp(-a))
@@ -54,12 +57,25 @@ class Neuron:
     def calc_output(self, x):
         a = self.calc_a(x)
         self.y = self.sigmoid(a)
-        if self.y >= (1-epsilon):
+        if self.y >= (1-self.epsilon):
             self.y = 1
-        elif self.y <= epsilon:
+        elif self.y <= self.epsilon:
             self.y = 0
         return self.y
 
+    #backprop_error = backpropagated values from next layer (d-y) for output layer
+    def learn(self, backprop_error, x):
+        delta_weight = []
+        f_prime = (self.y * (1 - self.y))
+        self.de = f_prime * backprop_error
+        for i in range(len(self.weight)):
+            delta_weight[i] = self.learnrate * x[i] * f_prime * backprop_error
+            self.prev_weight[i] = self.weight[i]
+
+            self.weight[i] +=   delta_weight[i] + \
+                                self.alpha * self.prev_delta_weight[i]
+
+            self.prev_delta_weight[i] = delta_weight[i]
 
 
     def print_weight(self):
@@ -95,25 +111,70 @@ class InputNeuron:
 class NeuralNetwork:
     def __init__(self, n):
         self.layer = []
-        for i in range(len(n)):
+        for i in range(n+1):
             self.layer.append([])
             # add dummy neuron for x0 to all layers except output layer
-            if i <= n-1:
+            if i < n:
                 self.layer[i].append(DummyNeuron())
 
-    def add_layer(self, i, j, lrate, alpha, epsilon):
-        for j in range(j):
-            if i != 0:
-                self.layer[i].append(Neuron(len(self.layer[i-1]), \
-                                            lrate, alpha, epsilon))
+    def add_layer(self, layer_n, node_n, lrate, alpha, epsilon):
+        for i in range(node_n):
+            if layer_n == 0:
+                self.layer[layer_n].append(InputNeuron())
             else:
-                self.layer[i].append(InputNeuron())
-
-    def input_data(self, filename):
-        data = []
-        d_output = 0
+                self.layer[layer_n].append(Neuron(len(self.layer[layer_n-1]), \
+                                                lrate, alpha, epsilon))
 
 
+    def input_train_data(self, data, d_output):
+        print(len(self.layer[0]))
+        for i in range(1, len(self.layer[0])):
+            self.layer[0][i].input_data(data[i-1])
+
+        # for every layer after input layer
+        for i in range(1, len(self.layer)):
+            x = self.get_layer_output(i-1)
+            #for every node in layer
+            for j in range(1, len(self.layer[i])):
+                self.layer[i][j].calc_output(x)
+
+        # check for error and adjust weight for output layer
+        i_output = len(self.layer)-1
+        for i in range(len(self.layer[i_output])):
+            d = 0
+            if i == d_output:
+                d = 1
+            else:
+                d = 0
+            de = d - self.layer[i_output][i].y
+            if de == 0:
+                continue
+            else:
+                x = self.get_layer_output(i_output-1)
+                self.layer[i_output][i].learn(de, x)
+
+        for i in reversed(range(1, len(self.layer)-1)):
+            for j in range(len(self.layer[i])):
+                de = self.get_layer_error(i+1, j)
+                x = self.get_layer_output(j-1)
+                self.layer[i][j].learn(de, x)
+
+
+    def get_layer_output(self, layer_n):
+        y = []
+        for i in range(len(self.layer[layer_n])):
+            y.append(self.layer[layer_n][i].y)
+        return y
+
+
+    # get dj of all layers above it
+    def get_layer_error(self, layer_n, node_n):
+        sum = 0
+        for i in range(1, len(self.layer[layer_n])):
+            sum +=  self.layer[layer_n][i].de * \
+                    self.layer[layer_n][i].prev_weight[node_n]
+
+        return sum
 
 
 
@@ -146,8 +207,15 @@ def output_textfile(test_name, output_name):
 ###############################################################################
 
 if __name__ == '__main__':
+    # print (output)
+    nn = NeuralNetwork(2)
+    nn.add_layer(0, 64, 0.5, 0, 0.1)
+    nn.add_layer(1, 40, 0.5, 0, 0.1)
+    nn.add_layer(2, 10, 0.5, 0, 0.1)
     dat, output = read_data("./training.txt")
-    print (output)
+    print(len(dat[1]))
+    for i in range(len(dat)):
+        nn.input_train_data(dat[i], output[i])
 
 
 
