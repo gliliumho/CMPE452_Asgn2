@@ -1,0 +1,37 @@
+The backpropagation network is designed with 2 layers (1 hidden layer, 1 output
+layer). The input layer has 64 neurons (+1 neuron for x0=1 for bias) for each
+grid of the 8x8 input from the dataset. Hidden layer has 10 neurons (+1 neuron
+for x0 = 1), which will feed its output to the output layer with 10 neurons.
+Each neuron of the output layer represents a class, which is digits from 0 to 9.
+
+Initial weight values are randomized at range of (-1,1), which is the
+"recommended values" stated in lecture slides.
+
+Learning rate is set at 0.05 so the weight values can be fine tuned and
+eventually converge. Therefore, the number of iterations/learning bound is set
+to 100 loops.
+
+Momentum is set at 0.1 to overcome local minima.
+Epsilon is set at 0.01 (low) so that more information is available for
+error-correction.
+
+The final average accuracy obtained for all 0-9 digit recognition is 90% but
+result may vary depending on the initial weight values randomized. After several
+runs with 100 training iterations, the results for average accuracy is usually
+from 86~93%.
+
+Summary of architecture & values:
+BPN layers:  	[Input, hidden, output] -> [64 nodes, 10 nodes, 10 nodes]
+Initial values: random(-1,1)
+Learning rate: 	0.05
+Momentum(α): 	0.1
+Epsilon(ε): 	0.01
+No. Iteration:	100
+Result (avg. accuracy): 90.762%
+
+The executable is in "./bin/" folder, cd into to that directory using
+terminal and run the executable by typing "./backprop". Alternatively, run
+backprop.py using Python3 shell.
+
+WARNING: Executable may not run for you because it is compiled on Mac OS X. I
+recommend you run the backprop.py using Python3 instead.

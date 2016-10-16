@@ -1,4 +1,8 @@
 ###############################################################################
+# Author:   Kin Yee Ho
+# NetID:    11kyh1
+# Email:    11kyh1@queensu.ca
+#
 # Run code by cd into same directory as this file and type
 # "python3 backprop.py". You need Python 3 to run this code. Make sure it is in
 # same directory as training.txt and testing.txt

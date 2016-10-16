@@ -7,5 +7,7 @@
 /build/
 /dist/
 history.txt
+weights.dat
+*.zip
 
 
