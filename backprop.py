@@ -1,31 +1,26 @@
 ###############################################################################
-# Run code by typing "python3 part4.py" in same directory as train.txt and
-# test.txt
+# Run code by cd into same directory as this file and type
+# "python3 backprop.py". You need Python 3 to run this code. Make sure it is in
+# same directory as training.txt and testing.txt
 #
-# Program will automatically train 2 neurons (one with simple learning,
-# another with error correction learning) using data from train.txt and test
-# using test.txt
+# Program start by initializing a backpropagation neural network with random
+# weights ranging (-1,1) and then train using data from training.txt. After
+# training is complete, the program will test the NN using data from testing.txt
+# and calculate it's accuracy.
 #
-# Test results will be written to output.txt
+# Information will be printed on console/terminal and written to "output.txt".
+# Output texts will also be appended to "history.txt" for reference to study
+# accuracy of different configurations.
+#
+# Accuracy might vary for each time the program is run because of different
+# random initial weight values for the NN.
 ###############################################################################
 
-# make a network class to keep track of layers of neurons
-# then take input from one to another
-# at each layer, add a dummy node(x0) that outputs y = 1 only
-#
-# Neuron will initialize with weight[n], n = number of inputs
-# auto add random weight
-#
-# calc_a(x) & calc_output(x) so it can be called by network
-# maybe add a learn???
-
-# need 10 output neurons for 10 classes {0...9}
-# output layer neurons have weights too, just the same neuron,
-# but output is final y, to be compared to d.
 
 import random
 import math
 import time
+
 
 class Neuron:
 
@@ -68,24 +63,19 @@ class Neuron:
             self.y = 0
         return self.y
 
+
     #backprop_error = backpropagated values from next layer (d-y) for output layer
     def learn(self, backprop_error, x):
         delta_weight = [0]*len(self.weight)
         f_prime = (self.y * (1 - self.y))
         self.de = f_prime * backprop_error
 
-        # print ("weight length:" + str(len(self.weight)))
-        # print ("Input length:" + str(len(x)))
-
         for i in range(len(self.weight)):
             delta_weight[i] = self.learnrate * x[i] * f_prime * backprop_error
             self.prev_weight[i] = self.weight[i]
-
             self.weight[i] +=   delta_weight[i] + \
                                 self.alpha * self.prev_delta_weight[i]
-
             self.prev_delta_weight[i] = delta_weight[i]
-
 
 
     def print_weight(self):
@@ -126,6 +116,7 @@ class NeuralNetwork:
             # add dummy neuron for x0 to all layers except output layer
             if i < n:
                 self.layer[i].append(DummyNeuron())
+
 
     def add_layer(self, layer_n, node_n, lrate, alpha, epsilon):
         for i in range(node_n):
@@ -172,7 +163,6 @@ class NeuralNetwork:
                 de = self.get_layer_error(i+1, j)
                 x = self.get_layer_output(i-1)
                 self.layer[i][j].learn(de, x)
-
         return sum_correct
 
 
@@ -189,8 +179,8 @@ class NeuralNetwork:
         for i in range(1, len(self.layer[layer_n])):
             sum +=  self.layer[layer_n][i].de * \
                     self.layer[layer_n][i].prev_weight[node_n]
-
         return sum
+
 
     def test(self, data):
         y = []
@@ -259,16 +249,17 @@ if __name__ == '__main__':
     start_time = time.time()
     dat, output = read_data("./training.txt")
 
+    # Train NN using training dataset
     for n in range(train_iterations):
         sum_correct = 0
         for i in range(len(dat)):
             sum_correct += nn.input_train_data(dat[i], output[i])
             percent_correct = sum_correct/(i+1)
-            print(" Training: ",end="")
-            print("%.2f" % float(i/len(dat)*100), end="")
-            print("% ", end="\t\t" )
-            print("i: " + str(n+1) + "/" + str(train_iterations), end="\t")
-            print("Acc: " + ("%.2f" % (percent_correct*10)), end="\r")
+            # print(" Training: ",end="")
+            # print("%.2f" % float(i/len(dat)*100), end="")
+            # print("% ", end="\t\t" )
+            # print("i: " + str(n+1) + "/" + str(train_iterations), end="\t")
+            # print("Acc: " + ("%.2f" % (percent_correct*10)), end="\r")
         # print("Accuracy: " + ("%.2f" % (percent_correct*10)) + " "*50 + "\r")
         # sum_correct /= len(dat)
 
@@ -282,6 +273,8 @@ if __name__ == '__main__':
     total_num = [0]*10
     sum_correct = 0
     dat, output = read_data("./testing.txt")
+
+    # Test NN using testing dataset
     for i in range(len(dat)):
             y = nn.test(dat[i])
             maxindex = 0

@@ -1,0 +1,21 @@
+============================== Configuration ==============================
+BPN layers:  	[64, 10, 10]
+Learning rate: 	0.05
+Momentum(α): 	0.1
+Epsilon(ε): 	0.01
+No. Iteration:	100
+
+============================== Result ==============================
+No. of correctly classified digits:
+Digit 0: 171/178   	(96.07%)
+Digit 1: 173/182   	(95.05%)
+Digit 2: 163/177   	(92.09%)
+Digit 3: 158/183   	(86.34%)
+Digit 4: 175/181   	(96.69%)
+Digit 5: 172/182   	(94.51%)
+Digit 6: 175/181   	(96.69%)
+Digit 7: 156/179   	(87.15%)
+Digit 8: 133/174   	(76.44%)
+Digit 9: 155/180   	(86.11%)
+Average accuracy:	90.762%
+
