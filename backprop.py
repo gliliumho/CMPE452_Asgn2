@@ -200,6 +200,17 @@ class NeuralNetwork:
         return y
 
 
+    def export_weights(self, filename):
+        output_text = ""
+        for i in range(1, len(self.layer)):
+            for j in range(1, len(self.layer[i])):
+                output_text += "# Layer: " + str(i) + "\tNode:" + str(j) + "\n"
+                output_text += str(self.layer[i][j].weight) + "\n\n"
+        f = open(filename, 'w')
+        f.write(output_text)
+        f.close()
+
+
 
 def read_data(filename):
     data = []
@@ -265,6 +276,7 @@ if __name__ == '__main__':
 
 
     elapsed_time = time.time() - start_time
+    nn.export_weights("./weights.dat")
     print("Training completed!", end="\t")
     print("Total training time: " + "%.2f"%(elapsed_time) +"s \t")
     print("Start testing..")
