@@ -25,7 +25,7 @@
 
 import random
 import math
-
+import time
 
 class Neuron:
 
@@ -43,8 +43,13 @@ class Neuron:
         self.prev_weight = [0]*len(self.weight)
         self.de = 0
 
+
     def sigmoid(self, a):
-        return 1/(1 + math.exp(-a))
+        try:
+            ex = math.exp(-a)
+        except OverflowError:
+            ex = float('inf')
+        return 1/(1 + ex)
 
 
     def calc_a(self, x):
@@ -132,7 +137,6 @@ class NeuralNetwork:
 
 
     def input_train_data(self, data, d_output):
-        # print(len(self.layer[0]))
         # put data into input layer (except x0)
         for i in range(1, len(self.layer[0])):
             self.layer[0][i].input_data(data[i-1])
@@ -141,12 +145,12 @@ class NeuralNetwork:
         for i in range(1, len(self.layer)):
             x = self.get_layer_output(i-1)
             #for every node in layer
-            for j in range(1, len(self.layer[i])):
+            for j in range(len(self.layer[i])):
                 self.layer[i][j].calc_output(x)
 
         # check for error and adjust weight for output layer
-        print("Starting to train output layer..")
         i_output = len(self.layer)-1
+        sum_correct = 0
         for i in range(len(self.layer[i_output])):
             d = 0
             if i == d_output:
@@ -155,19 +159,21 @@ class NeuralNetwork:
                 d = 0
             de = d - self.layer[i_output][i].y
             if de == 0:
+                sum_correct += 1
                 continue
             else:
                 x = self.get_layer_output(i_output-1)
                 self.layer[i_output][i].learn(de, x)
 
-        print("Starting to train hidden layer..")
+        # print("Starting to train hidden layer..")
         for i in reversed(range(1, len(self.layer)-1)):
-            print("Training hidden layer " + str(i))
             for j in range(1, len(self.layer[i])):
-                print("Training node no. " + str(j))
+                # print("Training hidden layer " + str(i) + "\tnode no. " + str(j))
                 de = self.get_layer_error(i+1, j)
                 x = self.get_layer_output(i-1)
                 self.layer[i][j].learn(de, x)
+
+        return sum_correct
 
 
     def get_layer_output(self, layer_n):
@@ -186,6 +192,23 @@ class NeuralNetwork:
 
         return sum
 
+    def test(self, data):
+        y = []
+        # put data into input layer (except x0)
+        for i in range(1, len(self.layer[0])):
+            self.layer[0][i].input_data(data[i-1])
+
+        # for every layer after input layer
+        for i in range(1, len(self.layer)):
+            x = self.get_layer_output(i-1)
+            #for every node in layer
+            for j in range(len(self.layer[i])):
+                if (i == len(self.layer)-1 ):
+                    y.append(self.layer[i][j].calc_output(x))
+                else:
+                    self.layer[i][j].calc_output(x)
+        return y
+
 
 
 def read_data(filename):
@@ -203,32 +226,102 @@ def read_data(filename):
         for i in range(len(data_line)):
             data_line[i] = float(data_line[i])
 
-        d_output.append(data_line.pop())
+        d_output.append(int(data_line.pop()))
         data.append(data_line)
     f.close()
 
     return (data, d_output)
 
 
-def output_textfile(test_name, output_name):
+def output_textfile(output_name):
     print("hello")
 
 
 ###############################################################################
 
 if __name__ == '__main__':
-    # print (output)
-    nn = NeuralNetwork(2)
-    nn.add_layer(0, 64, 0.5, 0, 0.1)
-    nn.add_layer(1, 40, 0.5, 0, 0.1)
-    nn.add_layer(2, 10, 0.5, 0, 0.1)
+    layer_config = [64, 10, 10]
+    learning_rate = 0.05
+    alpha = 0.1
+    epsilon = 0.01
+    train_iterations = 100
+
+    nn = NeuralNetwork(len(layer_config)-1)
+    for i in range(len(layer_config)):
+        nn.add_layer(i, layer_config[i], learning_rate, alpha, epsilon)
+    # MSE = 1000
+
+    print("Network config = [", end="")
+    for i in range(len(nn.layer)):
+        print(str(len(nn.layer[i])) + ",", end="")
+    print("\b]")
+    print("Start training..")
+    start_time = time.time()
     dat, output = read_data("./training.txt")
-    # print(len(dat[1]))
+
+    for n in range(train_iterations):
+        sum_correct = 0
+        for i in range(len(dat)):
+            sum_correct += nn.input_train_data(dat[i], output[i])
+            percent_correct = sum_correct/(i+1)
+            print(" Training: ",end="")
+            print("%.2f" % float(i/len(dat)*100), end="")
+            print("% ", end="\t\t" )
+            print("i: " + str(n+1) + "/" + str(train_iterations), end="\t")
+            print("Acc: " + ("%.2f" % (percent_correct*10)), end="\r")
+        # print("Accuracy: " + ("%.2f" % (percent_correct*10)) + " "*50 + "\r")
+        # sum_correct /= len(dat)
+
+
+    elapsed_time = time.time() - start_time
+    print("Training completed!", end="\t")
+    print("Total training time: " + "%.2f"%(elapsed_time) +"s \t")
+    print("Start testing..")
+    y = []
+    classified_correct = [0]*10
+    total_num = [0]*10
+    sum_correct = 0
+    dat, output = read_data("./testing.txt")
     for i in range(len(dat)):
-        nn.input_train_data(dat[i], output[i])
+            y = nn.test(dat[i])
+            maxindex = 0
+            for j in range(len(y)):
+                if y[j] > y[maxindex]:
+                    maxindex = j
+            desired_output = output[i]
+            total_num[desired_output] += 1
+            if (y[desired_output] == 1) or (desired_output == maxindex):
+                classified_correct[desired_output] += 1
+                sum_correct += 1
+                # print("Correct output: " + str(sum_correct))
 
-    # make function in NeuralNetwork to get data
+    pertg_correct = sum_correct/len(dat) * 100
+    print("Testing completed.")
+    # print("Accuracy: " + str(pertg_correct) + "%")
 
+    output_text = ""
+    output_text += ('='*30 + " Configuration " + '='*30 + "\n")
+    output_text += ("BPN layers:  \t" + str(layer_config) + "\n")
+    output_text += ("Learning rate: \t" + str(learning_rate) + "\n")
+    output_text += ("Momentum(α): \t" + str(alpha) + "\n")
+    output_text += ("Epsilon(ε): \t" + str(epsilon) + "\n")
+    output_text += ("No. Iteration:\t" + str(train_iterations) + "\n\n")
 
+    output_text += ('='*30 + " Result " + '='*30 + "\n")
+    output_text += ("No. of correctly classified digits:\n")
+    for i in range(len(classified_correct)):
+        output_text += "Digit " + str(i) + ": " + str(classified_correct[i]) + \
+                        "/" + str(total_num[i]) + "   \t("\
+                        "%.2f"%(classified_correct[i]/total_num[i]*100) + "%)\n"
+    output_text += ("Average accuracy:\t" + "%.3f"%(pertg_correct) + "%\n")
+    output_text += ("\n")
 
-    print("Hello world!")
+    history = open("./history.txt",'a')
+    history.write(output_text)
+    history.close()
+
+    output_file = open("./output.txt", 'w')
+    output_file.write(output_text)
+    output_file.close()
+
+    print(output_text)
